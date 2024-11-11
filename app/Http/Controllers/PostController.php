@@ -12,7 +12,28 @@ class PostController extends Controller
     // Listar todas las publicaciones
     public function index()
     {
-        return Post::all();
+        // Obtener todas las publicaciones
+        $posts = Post::all();
+
+        // Obtener las imágenes estáticas del directorio public/images/community/
+        $communityImages = [];
+        $directoryPath = public_path('images/community');
+
+        if (is_dir($directoryPath)) {
+            $files = scandir($directoryPath);
+            foreach ($files as $file) {
+                if ($file !== '.' && $file !== '..') {
+                    $communityImages[] = url("/images/community/$file");
+                }
+            }
+        }
+
+        // Añadir las imágenes estáticas a cada post
+        foreach ($posts as $post) {
+            $post->community_images = $communityImages;
+        }
+
+        return response()->json($posts);
     }
 
     // Obtener una publicación específica
@@ -30,8 +51,8 @@ class PostController extends Controller
                 'username' => 'required|string|max:255',
                 'email' => 'required|email|max:255',
                 'content' => 'required|string',
-                'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-                'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'images.*' => 'nullable|image|max:2048',
+                'profile_image' => 'nullable|image|max:2048',
             ]);
 
             Log::info('Validación completada');
@@ -57,7 +78,9 @@ class PostController extends Controller
                     $imagePaths = [];
                     foreach ($request->file('images') as $image) {
                         $path = $image->store('public/post/images');
-                        $imagePaths[] = str_replace('public/', '/storage/', $path);
+                        $formattedPath = str_replace('public/', '/storage/', $path);
+                        $formattedPath = str_replace('\\', '/', $formattedPath); // Corregir las barras invertidas
+                        $imagePaths[] = $formattedPath;
                     }
                     $data['images'] = json_encode($imagePaths);
                     Log::info('Imágenes almacenadas en: ' . json_encode($imagePaths));
@@ -67,6 +90,7 @@ class PostController extends Controller
             } else {
                 $data['images'] = json_encode([]);
             }
+
 
             Log::info('Datos antes de crear el post: ' . json_encode($data));
 
@@ -85,8 +109,6 @@ class PostController extends Controller
             return response()->json(['error' => 'Error inesperado: ' . $e->getMessage()], 500);
         }
     }
-
-
 
     // Actualizar una publicación existente
     public function update(Request $request, $id)
