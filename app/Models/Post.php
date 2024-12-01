@@ -17,6 +17,7 @@ class Post extends Model
         'game',
         'content',
         'images',
+        'video_url',
         'tags',
         'likes',
         'comments',

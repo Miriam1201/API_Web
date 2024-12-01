@@ -27,7 +27,7 @@ Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
 Route::get('/posts/{id}', [PostController::class, 'show'])->name('posts.show');
 
 // Ruta para crear una nueva publicación
-Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+Route::post('/community/store', [PostController::class, 'store'])->name('community.store');
 
 // Ruta para actualizar una publicación específica
 Route::put('/posts/{id}', [PostController::class, 'update'])->name('posts.update');
@@ -37,3 +37,8 @@ Route::delete('/posts/{id}', [PostController::class, 'destroy'])->name('posts.de
 
 // Si necesitas rutas adicionales como buscar publicaciones por ciertos criterios
 Route::get('/posts/search', [PostController::class, 'search'])->name('posts.search');
+
+// Rutas para devolver las vistas
+Route::get('/community/create/text', [PostController::class, 'createText'])->name('posts.createText');
+Route::get('/community/create/images', [PostController::class, 'createImages'])->name('posts.createImages');
+Route::get('/community/create/video', [PostController::class, 'createVideo'])->name('posts.createVideo');

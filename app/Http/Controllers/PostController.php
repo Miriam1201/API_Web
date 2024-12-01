@@ -3,152 +3,117 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use App\Models\Post;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\File;
 
 class PostController extends Controller
 {
-    // Listar todas las publicaciones
+    // Mostrar la vista de comunidad con publicaciones recientes
     public function index()
     {
-        // Obtener todas las publicaciones
-        $posts = Post::all();
+        $posts = Post::latest()->get();
 
-        // Obtener las imágenes estáticas del directorio public/images/community/
-        $communityImages = [];
-        $directoryPath = public_path('images/community');
-
-        if (is_dir($directoryPath)) {
-            $files = scandir($directoryPath);
-            foreach ($files as $file) {
-                if ($file !== '.' && $file !== '..') {
-                    $communityImages[] = url("/images/community/$file");
-                }
+        // Añadir un sticker aleatorio a cada publicación
+        foreach ($posts as $post) {
+            $stickerFiles = File::files(public_path('stickers'));
+            if (!empty($stickerFiles)) {
+                $randomSticker = $stickerFiles[array_rand($stickerFiles)];
+                $post->sticker = '/stickers/' . $randomSticker->getFilename();
+            } else {
+                $post->sticker = null;
             }
         }
 
-        // Añadir las imágenes estáticas a cada post
-        foreach ($posts as $post) {
-            $post->community_images = $communityImages;
-        }
-
-        return response()->json($posts);
+        return view('community.index', compact('posts'));
     }
 
-    // Obtener una publicación específica
-    public function show($id)
-    {
-        return Post::findOrFail($id);
-    }
-
-    // Crear una nueva publicación
     public function store(Request $request)
     {
-        try {
-            // Validar los datos de la solicitud
-            $request->validate([
-                'username' => 'required|string|max:255',
-                'email' => 'required|email|max:255',
-                'content' => 'required|string',
-                'images.*' => 'nullable|image|max:2048',
-                'profile_image' => 'nullable|image|max:2048',
-            ]);
-
-            Log::info('Validación completada');
-
-            $data = $request->all(); // Obtener todos los datos del request
-
-            // Guardar avatar si se proporciona
-            if ($request->hasFile('profile_image')) {
-                try {
-                    $avatarPath = $request->file('profile_image')->store('public/post/avatar');
-                    $data['profile_image'] = str_replace('public/', '/storage/', $avatarPath);
-                    Log::info('Avatar almacenado en: ' . $data['profile_image']);
-                } catch (\Exception $e) {
-                    return response()->json(['error' => 'Error al almacenar la imagen de perfil: ' . $e->getMessage()], 500);
-                }
-            } else {
-                $data['profile_image'] = '/images/avatar/default.png';
-            }
-
-            // Guardar las imágenes del post si se proporcionan
-            if ($request->hasFile('images')) {
-                try {
-                    $imagePaths = [];
-                    foreach ($request->file('images') as $image) {
-                        $path = $image->store('public/post/images');
-                        $formattedPath = str_replace('public/', '/storage/', $path);
-                        $formattedPath = str_replace('\\', '/', $formattedPath); // Corregir las barras invertidas
-                        $imagePaths[] = $formattedPath;
-                    }
-                    $data['images'] = json_encode($imagePaths);
-                    Log::info('Imágenes almacenadas en: ' . json_encode($imagePaths));
-                } catch (\Exception $e) {
-                    return response()->json(['error' => 'Error al almacenar las imágenes: ' . $e->getMessage()], 500);
-                }
-            } else {
-                $data['images'] = json_encode([]);
-            }
-
-
-            Log::info('Datos antes de crear el post: ' . json_encode($data));
-
-            // Crear el post en la base de datos
-            try {
-                $post = Post::create($data);
-                Log::info('Post creado exitosamente con ID: ' . $post->id);
-            } catch (\Exception $e) {
-                Log::error('Error al crear el post: ' . $e->getMessage());
-                return response()->json(['error' => 'Error al crear el post: ' . $e->getMessage()], 500);
-            }
-
-            return response()->json($post, 201);
-        } catch (\Exception $e) {
-            Log::error('Error inesperado: ' . $e->getMessage());
-            return response()->json(['error' => 'Error inesperado: ' . $e->getMessage()], 500);
-        }
-    }
-
-    // Actualizar una publicación existente
-    public function update(Request $request, $id)
-    {
-        $post = Post::findOrFail($id);
-        $validatedData = $request->validate([
-            'username' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|email|max:255',
-            'content' => 'sometimes|required|string',
-            'tags' => 'sometimes|array',
-            'tags.*' => 'string',
-            'images' => 'sometimes|array',
-            'images.*' => 'string',
+        // Validación del formulario
+        $request->validate([
+            'username' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'content' => 'required|string',
+            'images.*' => 'nullable|image|max:2048',
+            'profile_image' => 'nullable|image|max:2048',
+            'video_url' => 'nullable|url',
         ]);
 
-        $post->update($validatedData);
-        return $post;
-    }
+        // Inicializar un array vacío para almacenar los datos
+        $data = $request->only(['username', 'email', 'content']);
 
-    // Eliminar una publicación específica
-    public function destroy($id)
-    {
-        $post = Post::findOrFail($id);
-        $post->delete();
-        return response()->json(['message' => 'Publicación eliminada correctamente']);
-    }
+        // Procesar el enlace del video para que sea del tipo 'embed'
+        if ($request->filled('video_url')) {
+            $videoUrl = $request->input('video_url');
 
-    // Búsqueda personalizada de publicaciones (opcional)
-    public function search(Request $request)
-    {
-        $query = Post::query();
-
-        if ($request->has('username')) {
-            $query->where('username', 'like', '%' . $request->input('username') . '%');
+            // Extraer el ID del video y construir el nuevo enlace embed
+            if (preg_match('/watch\?v=([a-zA-Z0-9_-]+)/', $videoUrl, $matches)) {
+                $videoId = $matches[1];
+                $data['video_url'] = "https://www.youtube.com/embed?v={$videoId}";
+            } else {
+                $data['video_url'] = $videoUrl; // Si el formato no coincide, lo dejamos como está
+            }
         }
 
-        if ($request->has('content')) {
-            $query->where('content', 'like', '%' . $request->input('content') . '%');
+        // Guardar avatar si se proporciona
+        if ($request->hasFile('profile_image')) {
+            try {
+                $avatarPath = $request->file('profile_image')->store('public/post/avatar');
+                $data['profile_image'] = str_replace('public/', '/storage/', $avatarPath);
+            } catch (\Exception $e) {
+                Log::error('Error al guardar la imagen de perfil: ' . $e->getMessage());
+                return redirect()->back()->withErrors(['error' => 'No se pudo cargar la imagen de perfil.']);
+            }
+        } else {
+            $data['profile_image'] = '/images/avatar/default.png';
         }
 
-        return $query->get();
+        // Guardar las imágenes del post si se proporcionan
+        $imagePaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                try {
+                    $path = $image->store('public/post/images');
+                    $formattedPath = str_replace('public/', '/storage/', $path);
+                    $imagePaths[] = $formattedPath;
+                } catch (\Exception $e) {
+                    Log::error('Error al guardar una de las imágenes del post: ' . $e->getMessage());
+                    return redirect()->back()->withErrors(['error' => 'No se pudo cargar una o más imágenes.']);
+                }
+            }
+        }
+
+        // Asegurarnos de que `$imagePaths` esté formateado correctamente como array
+        $data['images'] = !empty($imagePaths) ? json_encode($imagePaths) : json_encode([]);
+
+        // Crear la publicación en la base de datos
+        try {
+            $post = Post::create($data);
+            return redirect()->route('community.index')->with('success', 'Publicación creada con éxito');
+        } catch (\Exception $e) {
+            Log::error('Error al crear la publicación: ' . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'Hubo un problema al crear la publicación, por favor intente de nuevo.']);
+        }
+    }
+
+
+    // Devolver la vista de crear publicación de texto
+    public function createText()
+    {
+        return view('create-post-text');
+    }
+
+    // Devolver la vista de crear publicación de imágenes
+    public function createImages()
+    {
+        return view('create-post-images');
+    }
+
+    // Devolver la vista de crear publicación de video
+    public function createVideo()
+    {
+        return view('create-post-video');
     }
 }

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('game')->default('Genshin Impact');
             $table->text('content');
             $table->json('images')->nullable();
+            $table->string('video_url')->nullable();
             $table->json('tags')->nullable();
             $table->integer('likes')->default(0);
             $table->integer('comments')->default(0);

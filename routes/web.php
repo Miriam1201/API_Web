@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PostController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,3 +17,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/community', [PostController::class, 'index'])->name('community.index');
+Route::post('/community/store', [PostController::class, 'store'])->name('community.store');
+Route::get('/community/create/text', [PostController::class, 'createText'])->name('posts.createText');
+Route::get('/community/create/images', [PostController::class, 'createImages'])->name('posts.createImages');
+Route::get('/community/create/video', [PostController::class, 'createVideo'])->name('posts.createVideo');
