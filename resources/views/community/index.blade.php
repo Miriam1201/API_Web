@@ -11,24 +11,27 @@
 <!-- Encabezado con el logo y el título -->
 <header class="bg-gray-800 p-6">
     <div class="container mx-auto">
-        <div class="flex items-center">
+        <div class="flex items-center justify-between">
             <a href="http://localhost:4321" class="flex items-center">
-                <img src="logo.png" alt="Genshin Impact Logo" class="h-20 mr-4" />
+                <img src="/logo.png" alt="Genshin Impact Logo" class="h-20 mr-4" />
                 <span class="text-white text-2xl font-semibold tracking-wide">
                     Genshin Impact
                 </span>
             </a>
+            @auth
+                <a href="{{ route('profile.edit') }}" class="bg-gray-700 text-white py-2 px-4 rounded-md">
+                    Perfil
+                </a>
+            @endauth
         </div>
     </div>
 </header>
 
-
-
-<body class="bg-gray-800 text-white">
+<body class="bg-gray-800 text-white"
+    style="background-image: url('/fondo1.png'); background-size: cover; background-position: center;">
     <div class="container mx-auto mt-8 grid grid-cols-3 gap-8">
         <!-- Listado de Publicaciones -->
         <div class="col-span-2">
-            <h2 class="text-3xl font-bold mb-6">Recomendado</h2>
 
             <div id="posts-list">
                 @if ($posts->isEmpty())
@@ -70,13 +73,13 @@
                             <!-- Mostrar video -->
                             @if ($post->video_url)
                                 <div class="mt-4">
-                                    <iframe width="560" height="315" class="rounded-lg"
+                                    <iframe class=" rounded-2xl" width="560" height="315"
                                         src="{{ $post->video_url }}" title="YouTube video player" frameborder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowfullscreen>
-                                    </iframe>
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                                 </div>
                             @endif
+
 
                             <!-- Mostrar sticker aleatorio si existe -->
                             @if ($post->sticker)
@@ -90,7 +93,7 @@
         </div>
 
         <!-- Formulario para Crear Publicación -->
-        <div class="col-span-1 p-6 bg-gray-200 text-gray-900 rounded-lg shadow-md">
+        <div class="p-6 bg-gray-200 text-gray-900 rounded-lg shadow-md self-start">
             <div class="tabs mb-6">
                 <!-- Botones para cambiar entre pestañas -->
                 <button data-tab="text"

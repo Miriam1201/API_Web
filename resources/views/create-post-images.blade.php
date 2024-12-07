@@ -2,12 +2,6 @@
     <h2 class="text-2xl font-bold mb-4">Publicar Imágenes</h2>
     <form action="{{ route('community.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
-        <input type="text" name="username" placeholder="Introduce tu nombre de usuario" required maxlength="255"
-            class="w-full p-3 bg-gray-100 rounded-md border border-gray-400 text-gray-700" />
-        <input type="email" name="email" placeholder="Introduce tu correo electrónico" required maxlength="255"
-            class="w-full p-3 bg-gray-100 rounded-md border border-gray-400 mt-4 text-gray-700" />
-        <label for="profile_image" class="block mt-4">Avatar</label>
-        <input type="file" name="profile_image" accept="image/*" class="w-full text-gray-700 mt-2" />
         <textarea name="content" placeholder="Introduce la descripción"
             class="w-full p-3 bg-gray-100 rounded-md border border-gray-400 mt-4 text-gray-700"></textarea>
         <label for="images" class="block mt-4">Imágenes</label>

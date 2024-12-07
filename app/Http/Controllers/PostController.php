@@ -33,42 +33,39 @@ class PostController extends Controller
     {
         // Validación del formulario
         $request->validate([
-            'username' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
             'content' => 'required|string',
             'images.*' => 'nullable|image|max:2048',
-            'profile_image' => 'nullable|image|max:2048',
             'video_url' => 'nullable|url',
+            'tags' => 'nullable|string'
         ]);
 
-        // Inicializar un array vacío para almacenar los datos
-        $data = $request->only(['username', 'email', 'content']);
+        // Inicializar un array para almacenar los datos del post
+        $user = auth()->user();
+        $data = [
+            'username' => $user->name,
+            'email' => $user->email,
+            'profile_image' => $user->profile_image ?? '/images/avatar/default.png', // Imagen de perfil predeterminada si no tiene avatar
+            'content' => $request->input('content'),
+            'tags' => $request->input('tags', ''),
+        ];
 
         // Procesar el enlace del video para que sea del tipo 'embed'
         if ($request->filled('video_url')) {
             $videoUrl = $request->input('video_url');
 
-            // Extraer el ID del video y construir el nuevo enlace embed
-            if (preg_match('/watch\?v=([a-zA-Z0-9_-]+)/', $videoUrl, $matches)) {
+            // Convertir el enlace al formato de embed
+            if (preg_match('/youtu\.be\/([a-zA-Z0-9_-]+)/', $videoUrl, $matches)) {
                 $videoId = $matches[1];
-                $data['video_url'] = "https://www.youtube.com/embed?v={$videoId}";
+                $data['video_url'] = "https://www.youtube.com/embed?{$videoId}";
+            } elseif (preg_match('/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/', $videoUrl, $matches)) {
+                $videoId = $matches[1];
+                $data['video_url'] = "https://www.youtube.com/embed?{$videoId}";
             } else {
-                $data['video_url'] = $videoUrl; // Si el formato no coincide, lo dejamos como está
+                $data['video_url'] = $videoUrl;
             }
         }
 
-        // Guardar avatar si se proporciona
-        if ($request->hasFile('profile_image')) {
-            try {
-                $avatarPath = $request->file('profile_image')->store('public/post/avatar');
-                $data['profile_image'] = str_replace('public/', '/storage/', $avatarPath);
-            } catch (\Exception $e) {
-                Log::error('Error al guardar la imagen de perfil: ' . $e->getMessage());
-                return redirect()->back()->withErrors(['error' => 'No se pudo cargar la imagen de perfil.']);
-            }
-        } else {
-            $data['profile_image'] = '/images/avatar/default.png';
-        }
+
 
         // Guardar las imágenes del post si se proporcionan
         $imagePaths = [];
@@ -91,12 +88,15 @@ class PostController extends Controller
         // Crear la publicación en la base de datos
         try {
             $post = Post::create($data);
-            return redirect()->route('community.index')->with('success', 'Publicación creada con éxito');
+            return redirect()->route('comunidad')->with('success', 'Publicación creada con éxito');
         } catch (\Exception $e) {
             Log::error('Error al crear la publicación: ' . $e->getMessage());
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al crear la publicación, por favor intente de nuevo.']);
         }
     }
+
+
+
 
 
     // Devolver la vista de crear publicación de texto
