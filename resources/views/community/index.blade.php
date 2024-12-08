@@ -14,7 +14,8 @@
     <!-- Encabezado con el logo y el título -->
     <header class="bg-gray-800 p-6">
         <div class="container mx-auto flex items-center justify-between flex-wrap">
-            <a href="http://localhost:4321" class="flex items-center gap-4">
+            <a href="https://web-presentacion-kduea5px6-miriams-projects-5a1760ea.vercel.app"
+                class="flex items-center gap-4">
                 <img src="/logo.png" alt="Genshin Impact Logo" class="h-16 w-auto" />
                 <span class="text-white text-lg md:text-2xl font-semibold tracking-wide">
                     Genshin Impact
