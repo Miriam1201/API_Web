@@ -8,48 +8,48 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 
-<!-- Encabezado con el logo y el título -->
-<header class="bg-gray-800 p-6">
-    <div class="container mx-auto">
-        <div class="flex items-center justify-between">
-            <a href="http://localhost:4321" class="flex items-center">
-                <img src="/logo.png" alt="Genshin Impact Logo" class="h-20 mr-4" />
-                <span class="text-white text-2xl font-semibold tracking-wide">
+<body class="bg-gray-800 text-white"
+    style="background-image: url('/fondo1.png'); background-size: cover; background-position: center;">
+
+    <!-- Encabezado con el logo y el título -->
+    <header class="bg-gray-800 p-6">
+        <div class="container mx-auto flex items-center justify-between flex-wrap">
+            <a href="http://localhost:4321" class="flex items-center gap-4">
+                <img src="/logo.png" alt="Genshin Impact Logo" class="h-16 w-auto" />
+                <span class="text-white text-lg md:text-2xl font-semibold tracking-wide">
                     Genshin Impact
                 </span>
             </a>
             @auth
-                <a href="{{ route('profile.edit') }}" class="bg-gray-700 text-white py-2 px-4 rounded-md">
+                <a href="{{ route('profile.edit') }}"
+                    class="bg-gray-700 text-white py-2 px-4 rounded-md text-sm md:text-base mt-4 md:mt-0">
                     Perfil
                 </a>
             @endauth
         </div>
-    </div>
-</header>
+    </header>
 
-<body class="bg-gray-800 text-white"
-    style="background-image: url('/fondo1.png'); background-size: cover; background-position: center;">
-    <div class="container mx-auto mt-8 grid grid-cols-3 gap-8">
+    <!-- Contenido principal -->
+    <div class="container mx-auto mt-8 grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
         <!-- Listado de Publicaciones -->
-        <div class="col-span-2">
-
+        <div class="md:col-span-2">
             <div id="posts-list">
                 @if ($posts->isEmpty())
-                    <p>No hay publicaciones disponibles.</p>
+                    <p class="text-center text-gray-400">No hay publicaciones disponibles.</p>
                 @else
                     @foreach ($posts as $post)
                         <div class="p-6 mb-6 bg-gray-100 text-gray-900 rounded-lg shadow-md relative">
-                            <div class="flex items-center mb-4">
+                            <div class="flex items-center mb-4 gap-4 flex-wrap">
                                 <img src="{{ $post->profile_image ?? '/images/avatar/default.png' }}"
-                                    alt="Avatar de usuario" class="h-12 w-12 rounded-full mr-4">
+                                    alt="Avatar de usuario" class="h-12 w-12 rounded-full">
                                 <div>
-                                    <h4 class="text-xl font-bold">{{ $post->username }}</h4>
+                                    <h4 class="text-lg font-bold">{{ $post->username }}</h4>
                                     <p class="text-sm text-gray-600">{{ $post->created_at->format('Y-m-d') }} -
                                         {{ $post->game }}</p>
-                                    <p>{{ $post->email }}</p>
+                                    <p class="text-sm">{{ $post->email }}</p>
                                 </div>
                             </div>
-                            <p class="mb-4">{{ $post->content }}</p>
+                            <p class="mb-4 text-sm">{{ $post->content }}</p>
 
                             <!-- Mostrar imágenes -->
                             @if (!empty($post->images))
@@ -61,7 +61,7 @@
                                 @if ($images)
                                     <div class="flex flex-wrap -mx-2">
                                         @foreach ($images as $image)
-                                            <div class="w-1/3 px-2 mb-4">
+                                            <div class="w-full md:w-1/2 lg:w-1/3 px-2 mb-4">
                                                 <img src="{{ $image }}" alt="Imagen del post"
                                                     class="rounded-lg shadow-md">
                                             </div>
@@ -73,18 +73,17 @@
                             <!-- Mostrar video -->
                             @if ($post->video_url)
                                 <div class="mt-4">
-                                    <iframe class=" rounded-2xl" width="560" height="315"
-                                        src="{{ $post->video_url }}" title="YouTube video player" frameborder="0"
+                                    <iframe class="w-full rounded-2xl aspect-video" src="{{ $post->video_url }}"
+                                        title="YouTube video player" frameborder="0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                                 </div>
                             @endif
 
-
                             <!-- Mostrar sticker aleatorio si existe -->
                             @if ($post->sticker)
                                 <img src="{{ $post->sticker }}" alt="Sticker del post"
-                                    class="absolute bottom-2 right-2 h-32 w-32">
+                                    class="absolute bottom-2 right-2 h-20 w-20 sm:h-32 sm:w-32">
                             @endif
                         </div>
                     @endforeach
